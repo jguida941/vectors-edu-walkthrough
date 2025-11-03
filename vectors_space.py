@@ -21,7 +21,6 @@ class R2Vector:
     #def __getattribute__(self, attr):
         #"""Intercepts all lookups. Delegate to keep normal behavior."""
         #return object.__getattribute__(self, attr)
-
     #def __getattr__(self, attr):
         #"""Called only if attribute not found normally."""
         #return f'No attribute named {attr}'
@@ -62,6 +61,10 @@ class R2Vector:
         # If we get here, types are incompatible (e.g., vector * "string")
         return NotImplemented
 
+    def __eq__(self, other):
+        """Check equality of two vectors."""
+        pass # Placeholder for equality comparison if needed
+
 class R3Vector(R2Vector):
     """3D vector extending R2Vector with a z component."""
     def __init__(self, *, x, y, z):
@@ -71,14 +74,35 @@ class R3Vector(R2Vector):
 v1 = R2Vector(x=2, y=3)
 v2 = R2Vector(x=0.5, y=1.25)
 
-# Addition and subtraction examples
+# Addition, subtraction, multiplication examples
 v3 = v1 + v2
 v4 = v1 - v2
+v5 = v1 * 3          # Scalar multiplication
+v6 = v1 * v2         # Dot product
 
+print("Vector Instances")
+print("-------------------------")
 print(f'v1 = {v1}')
 print(f'v2 = {v2}')
-print(f'v3 = {v3}')
-print(f'v4 = {v4}')
+
+print("\nAddition and Subtraction")
+print("-------------------------")
+print(f'v1 + v2 = {v3}')
+print(f'v1 - v2 = {v4}')
+
+print("\nScalar multiplication")
+print("-------------------------")
+print(f'v1 * 3 = {v5}')
+print("\nDot product")
+print("-------------------------")
+print(f'v1 * v2 = {v6}')
+
+# Example invalid type will return NotImplemented
+#v7 = v1 + R3Vector(x=1, y=2, z=3)  # Different types cannot be added
+#print("\nInvalid Operation Result:")
+#print("-------------------------")
+#print(f'v7 = {v7}')  # Should print: v7 = Not Implemented
+
 
 # Display examples of both __str__ and __repr__ behavior
 # print(f"{v1!r}") # uses __repr__ flag

@@ -111,7 +111,9 @@ class R5Vector(R2Vector):
     """Represents a 5D vector using __slots__ for memory efficiency
     __slots__ can't use __dict__
     One way to work around this is to explicitly list the attributes in __slots__.
-    This prevents dynamic attribute creation but saves memory."""
+    This prevents dynamic attribute creation but saves memory.
+    Ignore if unfamiliar; this is for educational purposes.
+    Typically, you'd use either __dict__ or __slots__, not both."""
 
     __slots__ = ('x', 'y', 'z', 'w', 'v')  # Predefine allowed attributes
     def __init__(self, *, x, y, z, w, v):
@@ -146,18 +148,28 @@ class R5Vector(R2Vector):
         # But not R2Vector + R3Vector or R5Vector + int
         if type(self) != type(other):
             return NotImplemented
-        # Create a new instance of the same class with summed attributes
-        # key arguments are looped through from vars(self) and added together
-        kwargs = {i: getattr(self, i) + getattr(other, i) for i in vars(self)}
-        # pass **kwargs to unpack the dictionary into keyword arguments
-        return self.__class__(**kwargs) # example R5Vector(x=6, y=9, z=..., w=..., v=...)
+        # With __slots__, the instance does not expose a __dict__,
+        # so we loop directly over the defined slot names (x, y, z, w, v).
+        component_names = self.__slots__
+        # Build a dictionary of summed components keyed by the slot names.
+        summed_values = {
+            name: getattr(self, name) + getattr(other, name)
+            for name in component_names
+        }
+        # pass **summed_values to unpack into keyword arguments
+        return self.__class__(**summed_values) # example R5Vector(x=6, y=9, ...)
 
     def __sub__(self, other):
         """Vector subtraction of two vectors of the same type."""
         if type(self) != type(other):
             return NotImplemented
-        kwargs = {i: getattr(self, i) - getattr(other, i) for i in vars(self)}
-        return self.__class__(**kwargs)
+        # Iterate over __slots__ so we can access every stored component.
+        component_names = self.__slots__
+        diff_values = {
+            name: getattr(self, name) - getattr(other, name)
+            for name in component_names
+        }
+        return self.__class__(**diff_values)
 
     def __mul__(self, other):
         """
@@ -173,24 +185,34 @@ class R5Vector(R2Vector):
         """
         # Scalar multiplication case
         if type(other) in (int, float):
-            # x = x * number, y = y * number → returns new vector..
-            # x=2*2, y=3*2
-            kwargs = {i: getattr(self, i) * other for i in vars(self)}
+            # x = x * number, y = y * number → returns new vector.
+            # Iterate over __slots__ so we hit every stored coordinate.
+            scaled_values = {
+                name: getattr(self, name) * other
+                for name in self.__slots__
+            }
             # return the vector class with the arguments unpacked
-            return self.__class__(**kwargs)
+            return self.__class__(**scaled_values)
 
         # Dot product case
         elif type(self) == type(other):
             # Dot product
             # x1*x2 + y1*y2 -> returns scalar
             # 2*0.5 + 3*1.25
-            args = [getattr(self, i) * getattr(other, i) for i in vars(self)]
+            # Iterate over the slot names to pair up every component.
+            args = [
+                getattr(self, name) * getattr(other, name)
+                for name in self.__slots__
+            ]
             # return just the sum of the products
             return sum(args)
+        # If we get here, types are incompatible (e.g., vector * "string")
         return NotImplemented
 
 
 # 6D vector using __slots__, using show_attributes method to display attributes
+# We could inherit, but we are using slots on top of dict-based attributes,
+# So we have to reimplement methods anyway.
 class R6Vector(R2Vector):
     """Represents a 6D vector using __slots__ for memory efficiency.
     Uses show_attr method to display attributes, without having
@@ -198,8 +220,10 @@ class R6Vector(R2Vector):
 
     __slots__ = ('z', 'w', 'v', 'u')  # Only need to list new attributes
 
-    # static method doesn't require self parameter
-    # static method allows calling the method on the class itself
+    # So @staticmethod tells Python: “This function lives inside the
+    # class for organization, but don’t give it self.”
+    # This allows us to call it directly on the class without
+    # affecting instances with self.
     @staticmethod
     def show_attr(obj):
         # Get regular attributes (for classes that have __dict__)
@@ -221,13 +245,89 @@ class R6Vector(R2Vector):
         # You can also initialize attributes all in one clean line
         self.z, self.w, self.v, self.u = z, w, v, u
 
+    def norm(self):
+        """Compute the Euclidean norm (length) across all six components."""
+        # Gather each component explicitly so readers can see what is included.
+        components = (self.x, self.y, self.z, self.w, self.v, self.u)
+        # Square each value, sum them, then take the square root.
+        # coord is each component in the tuple.
+        return sqrt(sum(coord ** 2 for coord in components))
+
+    def __str__(self):
+        """Return a readable string like \"(x, y, z, w, v, u)\"."""
+        # Build the coordinate tuple in order so print(v5) looks complete.
+        coordinates = (self.x, self.y, self.z, self.w, self.v, self.u)
+        return str(coordinates)
+
+    def __repr__(self):
+        """Return an unambiguous string like R6Vector(x=..., y=..., ...)."""
+        # Format each field explicitly to mirror the constructor signature.
+        return (
+            "R6Vector("
+            f"x={self.x}, y={self.y}, z={self.z}, "
+            f"w={self.w}, v={self.v}, u={self.u}"
+            ")"
+        )
+
+    # Reuse the same educational commentary style as R5Vector,
+    # but note how we stitch together the inherited (__dict__) fields
+    # and the extra __slots__ fields (z, w, v, u).
+    # v1 + v2  -->  v1.__add__(v2)
+    #              ^self         ^other (what's on the RIGHT of +)
+    # Adds matching fields and returns a NEW object.
+    def __add__(self, other):
+        """Vector addition of two R6Vector instances."""
+        if type(self) != type(other):
+            return NotImplemented
+        # Combine the base-class attributes ('x', 'y') with this class's slots.
+        # We do this because R6Vector inherits x and y from R2Vector,
+        component_names = ('x', 'y') + self.__slots__
+        summed_values = {
+            name: getattr(self, name) + getattr(other, name)
+            for name in component_names
+        }
+        return self.__class__(**summed_values)
+
+    def __sub__(self, other):
+        """Vector subtraction keeping all six coordinates."""
+        if type(self) != type(other):
+            return NotImplemented
+        component_names = ('x', 'y') + self.__slots__
+        diff_values = {
+            name: getattr(self, name) - getattr(other, name)
+            for name in component_names
+        }
+        return self.__class__(**diff_values)
+
+    def __mul__(self, other):
+        """
+        Multiply vector by a scalar or compute the dot product.
+
+        A scalar (int or float) multiplies each component of the vector.
+        When both sides are vectors of the same type,
+        we compute the dot product by multiplying and summing each coordinate.
+        """
+        component_names = ('x', 'y') + self.__slots__
+
+        if type(other) in (int, float):
+            scaled_values = {
+                name: getattr(self, name) * other
+                for name in component_names
+            }
+            return self.__class__(**scaled_values)
+
+        elif type(self) == type(other):
+            products = [
+                getattr(self, name) * getattr(other, name)
+                for name in component_names
+            ]
+            return sum(products)
+
+        return NotImplemented
+
 
 # Instantiate using keyword arguments (required because of *)
 v1 = R2Vector(x=2, y=3)
-# v2 = R3Vector(x=2, y=2, z=3) # commented out for step 47
-
-# Step 47 we modify v2 variable assignment to be R2Vector instance
-# to have x = 0.5, and y = 1.25
 v2 = R2Vector(x=0.5, y=1.25)
 v3 = R4Vector(x=1, y=2, z=3, w=4)
 
@@ -236,6 +336,7 @@ v4 = R5Vector(x=1, y=2, z=3, w =4, v=5)
 
 # R6Vector using __slots__ and show_attr method
 v5 = R6Vector(x=1, y=2, z=3, w=4, v=5, u=6)
+
 
 # Print bound method reference (shows module and memory address)
 print("v1.norm method reference:")
