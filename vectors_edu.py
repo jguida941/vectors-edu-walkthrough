@@ -77,6 +77,90 @@ class R2Vector:
         # "R2Vector(x=2, y=3)" or "R3Vector(x=2, y=3, z=4)"
         return f"{self.__class__.__name__}({arg_str})"
 
+    def __add__(self, other):
+        """Add two vectors component-wise."""
+        # Must be same type to add
+        if type(self) != type(other):
+            return NotImplemented
+        kwargs = {i: getattr(self, i) + getattr(other, i) for i in vars(self)}
+        return self.__class__(**kwargs)
+
+    def __sub__(self, other):
+        """Subtract two vectors component-wise."""
+        # If not same type, cannot subtract
+        if type(self) != type(other):
+            return NotImplemented
+        kwargs = {i: getattr(self, i) - getattr(other, i) for i in vars(self)}
+        return self.__class__(**kwargs)
+
+    def __mul__(self, other):
+        """Multiply vectors: scalar multiplication or dot product."""
+        # Scalar multiplication case
+        if type(other) in (int, float):
+            # x = x * number, y = y * number → returns new vector..
+            # x=2*2, y=3*2
+            kwargs = {i: getattr(self, i) * other for i in vars(self)}
+            # return the vector class with the arguments unpacked
+            return self.__class__(**kwargs)
+
+        # Dot product case
+        elif type(self) == type(other):
+            # Dot product
+            # x1*x2 + y1*y2 -> returns scalar (e.g 2*0.5 + 3*1.25)
+            args = [getattr(self, i) * getattr(other, i) for i in vars(self)]
+            # Return just the sum of the products
+            return sum(args)
+        # If we get here, types are incompatible (e.g., vector * "string")
+        return NotImplemented
+
+
+    def __eq__(self, other):
+        """Return True if all attributes are equal, False otherwise."""
+        # You only compare vectors of the same class/type
+        if type(self) != type(other):
+            return NotImplemented
+        # If the attributes are all equal for entire vars dict, return True
+        if all(getattr(self, i) == getattr(other, i) for i in vars(self)):
+            return True
+        return False
+
+    def __ne__(self, other):
+        """Return True if any attribute differs, False otherwise."""
+        # Inequality is just the opposite of equality
+        # Since we defined __eq__ and it yields a boolean
+        # we can just use a not return statement
+        return not self == other
+
+    # Less-than comparison based on norm
+    def __lt__(self, other):
+        """Less-than comparison based on norm."""
+        if type(self) != type(other):
+            return NotImplemented
+        # Compare the norm of current instance with the norm of the other instance
+        # Since this is __lt__, it returns True if self.norm is less than other.norm
+        return self.norm() < other.norm()
+
+    # Greater than comparison based on norm
+    def __gt__(self, other):
+        """Greater-than comparison based on norm."""
+        if type(self) != type(other):
+            return NotImplemented
+        return self.norm() > other.norm()
+
+    # Less than or equal to comparison based on norm
+    def __le__(self, other):
+        """Less-than-or-equal-to comparison based on norm."""
+        if type(self) != type(other):
+            return NotImplemented
+        return not self > other
+
+    def __ge__(self, other):
+        """Greater-than-or-equal-to comparison based on norm."""
+        if type(self) != type(other):
+            return NotImplemented
+        return not self < other
+
+
 # Inheritance lets a class inherit methods and properties from a parent class
 class R3Vector(R2Vector):
     """Represents a 3D vector that inherits behavior from R2Vector."""
@@ -88,6 +172,19 @@ class R3Vector(R2Vector):
         # super() calls the parent class (R2Vector) to initialize x and y
         super().__init__(x=x, y=y)
         self.z = z
+        # A cross product is between two 3D vectors; and the result is another 3D vector.
+
+    def cross(self, other):
+        """Return the cross product of two R3 vectors."""
+        if type(self) != type(other):
+            return NotImplemented
+        kwargs = {
+            'x': self.y * other.z - self.z * other.y,
+            'y': self.z * other.x - self.x * other.z,
+            'z': self.x * other.y - self.y * other.x
+        }
+        return self.__class__(**kwargs)
+
 
 """
 Practice here making a 4D vector class that inherits from R2Vector.
@@ -114,13 +211,10 @@ class R5Vector(R2Vector):
     This prevents dynamic attribute creation but saves memory.
     Ignore if unfamiliar; this is for educational purposes.
     Typically, you'd use either __dict__ or __slots__, not both."""
-
-    __slots__ = ('x', 'y', 'z', 'w', 'v')  # Predefine allowed attributes
+    __slots__ = ('z', 'w', 'v')  # ← drop x, y
     def __init__(self, *, x, y, z, w, v):
-        super().__init__(x=x, y=y)
-        self.z = z
-        self.w = w
-        self.v = v
+        super().__init__(x=x, y=y)  # x,y live in base __dict__
+        self.z, self.w, self.v = z, w, v
 
     def norm(self):
         """Compute the Euclidean norm (length) of the 5D vector."""
@@ -325,64 +419,122 @@ class R6Vector(R2Vector):
 
         return NotImplemented
 
+    def __eq__(self, other):
+        """Check equality of two vectors."""
+        if type(self) != type(other):
+            return NotImplemented
+        component_names = ('x', 'y') + self.__slots__
+        return all(getattr(self, name) == getattr(other, name) for name in component_names)
 
-# Instantiate using keyword arguments (required because of *)
-v1 = R2Vector(x=2, y=3)
-v2 = R2Vector(x=0.5, y=1.25)
-v3 = R4Vector(x=1, y=2, z=3, w=4)
+    def __ne__(self, other):
+        """Check inequality of two vectors."""
+        return not self == other
 
-# R5Vector using __slots__
-v4 = R5Vector(x=1, y=2, z=3, w =4, v=5)
+    def __lt__(self, other):
+        """Less-than comparison based on norm."""
+        if type(self) != type(other):
+            return NotImplemented
+        return self.norm() < other.norm()
 
-# R6Vector using __slots__ and show_attr method
-v5 = R6Vector(x=1, y=2, z=3, w=4, v=5, u=6)
+    def __ge__(self, other):
+        """Greater-than-or-equal-to comparison based on norm."""
+        if type(self) != type(other):
+            return NotImplemented
+        return not self < other
 
+if __name__ == "__main__":
+    # 2D vectors
+    v1 = R2Vector(x=2, y=3)
+    v2 = R2Vector(x=0.5, y=1.25)
 
-# Print bound method reference (shows module and memory address)
-print("v1.norm method reference:")
-print(v1.norm)
+    # 3D vectors for cross product
+    v1_cross = R3Vector(x=2, y=3, z=1)
+    v2_cross = R3Vector(x=0.5, y=1.25, z=2)
+    v6_cross = v1_cross.cross(v2_cross)
 
-# Call the method through the object
-print("\nv1.norm() call result:")
-print(v1.norm())  # 3.605551275463989
+    # 4D/5D/6D instances for __str__/__repr__ and slots demo
+    v3 = R4Vector(x=1, y=2, z=3, w=4)
+    v4 = R5Vector(x=1, y=2, z=3, w=4, v=5)
+    v5 = R6Vector(x=1, y=2, z=3, w=4, v=5, u=6)
 
-# __str__ makes print(v1) show coordinates instead of a memory address
-print("\nv1 printed:")
-print(v1)  # (2, 3)
+    # Arithmetic on 2D
+    v_add = v1 + v2
+    v_sub = v1 - v2
+    v_scl = v1 * 3
+    v_dot = v1 * v2
 
-# Demonstrate inheritance and method reuse
-print("\nv2 printed and v2.norm() call result:")
-print(v2)         # uses R2Vector.__str__
-print(v2.norm())  # reuses parent method
+    # 1) norm method reference and call
+    print("v1.norm method reference:")
+    print(v1.norm)
+    print("\nv1.norm() call result:")
+    print(v1.norm())
 
-# Inspect each instance’s internal attribute dictionary (__dict__).
-# This shows all attributes stored in the object and their values.
-# Example:
-#   v1 = R2Vector(x=2, y=3) → {'x': 2, 'y': 3}
-#   v2 = R3Vector(x=2, y=2, z=3) → {'x': 2, 'y': 2, 'z': 3}
-print("\nv1 and v2 __dict__ contents:")
-print("v1.__dict__:", v1.__dict__)
-print("v2.__dict__:", v2.__dict__)
+    # 2) __str__ prints
+    print("\nv1 printed:")
+    print(v1)
+    print("\nv2 printed and v2.norm() call result:")
+    print(v2)
+    print(v2.norm())
 
-# Demonstrate __repr__ and __str__ usage with f-string formatting
-print("\nrepr(v1), str(v1), and f'{v1!r}':")
-print("repr(v1):", repr(v1))  # Explicitly calls __repr__
-print("str(v1):", str(v1))    # Calls __str__
-print("f'{v1!r}':", f"{v1!r}")  # !r calls __repr__
+    # 3) __dict__ contents (note: slotted classes won't show all fields here)
+    print("\nv1 and v2 __dict__ contents:")
+    print("v1.__dict__:", v1.__dict__)
+    print("v2.__dict__:", v2.__dict__)
 
+    # 4) repr vs str vs f'!r'
+    print("\nrepr(v1), str(v1), and f'{v1!r}':")
+    print("repr(v1):", repr(v1))
+    print("str(v1):", str(v1))
+    print("f'{v1!r}':", f"{v1!r}")
 
-# Show both __str__ and __repr__ for all vector instances
-print("\nDisplaying all vector instances with __str__ and __repr__:")
-print(f"\nv1 = {v1}\nrepr = {repr(v1)}\n") #R2Vector
-print(f"v2 = {v2}\nrepr = {repr(v2)}\n")   #R3Vector
-print(f"v3 = {v3}\nrepr = {repr(v3)}\n")   #R4Vector
-print(f"v4 = {v4}\nrepr = {repr(v4)}\n")   #R5Vector using __slots__
-print(f"v5 = {v5}\nrepr = {repr(v5)}\n")   #R6Vector using __slots__ and show_attr method
+    # 5) Show all vector instances (__str__ and __repr__)
+    print("\nDisplaying all vector instances with __str__ and __repr__:")
+    print(f"\nv1 = {v1}\nrepr = {repr(v1)}\n")
+    print(f"v2 = {v2}\nrepr = {repr(v2)}\n")
+    print(f"v3 = {v3}\nrepr = {repr(v3)}\n")
+    print(f"v4 = {v4}\nrepr = {repr(v4)}\n")
+    print(f"v5 = {v5}\nrepr = {repr(v5)}\n")
 
-# directly call show_attr method to display attributes
-print("v5 attributes using R6Vector.show_attr method:")
-print(R6Vector.show_attr(v5))
+    # 6) Arithmetic and comparisons
+    print("Vector Instances")
+    print("-------------------------")
+    print(f'v1 = {v1}')
+    print(f'v2 = {v2}')
 
-# Educational purpose:
-# This file demonstrates Python OOP basics — constructors, inheritance,
-# instance attributes, __dict__, __str__, __repr__, and f-string formatting.
+    print("\nAddition and Subtraction")
+    print("-------------------------")
+    print(f'v1 + v2 = {v_add}')
+    print(f'v1 - v2 = {v_sub}')
+
+    print("\nScalar multiplication")
+    print("-------------------------")
+    print(f'v1 * 3 = {v_scl}')
+
+    print("\nDot product")
+    print("-------------------------")
+    print(f'v1 * v2 = {v_dot}')
+
+    print("\nEquality Checks")
+    print("-------------------------")
+    print(f'v1 == v2: {v1 == v2}')
+    print(f'v1 != v2: {v1 != v2}')
+    print('v1 == R2Vector(x=2, y=3):', v1 == R2Vector(x=2, y=3))
+    print('v1 != R2Vector(x=2, y=3):', v1 != R2Vector(x=2, y=3))
+
+    print("\nComparison Checks")
+    print("-------------------------")
+    print('v1 < v2:',  v1 < v2)
+    print('v1 <= v2:', v1 <= v2)
+    print('v1 > v2:',  v1 > v2)
+    print('v1 >= v2:',  v1 >= v2)
+
+    # 7) Cross product
+    print('\nCross Product of R3 Vectors')
+    print('-------------------------')
+    print(f'v1_cross = {v1_cross}')
+    print(f'v2_cross = {v2_cross}')
+    print(f'v1_cross.cross(v2_cross) = {v6_cross}')
+
+    # 8) slots/attributes demo
+    print("\nv5 attributes using R6Vector.show_attr method:")
+    print(R6Vector.show_attr(v5))
