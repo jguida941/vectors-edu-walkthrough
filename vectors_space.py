@@ -116,9 +116,6 @@ class R3Vector(R2Vector):
         }
         return self.__class__(**kwargs)
 
-
-
-
 if __name__ == "__main__":
     # Instantiate vectors
     v1 = R2Vector(x=2, y=3)
