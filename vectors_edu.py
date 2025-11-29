@@ -161,7 +161,6 @@ class R2Vector:
             return NotImplemented
         return not self < other
 
-
 # Inheritance lets a class inherit methods and properties from a parent class
 class R3Vector(R2Vector):
     """Represents a 3D vector that inherits behavior from R2Vector."""
@@ -174,7 +173,6 @@ class R3Vector(R2Vector):
         super().__init__(x=x, y=y)
         self.z = z
 
-    
     # A cross product is between two 3D vectors; and the result is another 3D vector.
     def cross(self, other):
         """Return the cross product of two R3 vectors."""
@@ -186,7 +184,6 @@ class R3Vector(R2Vector):
             'z': self.x * other.y - self.y * other.x
         }
         return self.__class__(**kwargs)
-
 
 """
 Practice here making a 4D vector class that inherits from R2Vector.
