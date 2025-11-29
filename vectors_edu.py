@@ -110,6 +110,7 @@ class R2Vector:
             args = [getattr(self, i) * getattr(other, i) for i in vars(self)]
             # Return just the sum of the products
             return sum(args)
+        
         # If we get here, types are incompatible (e.g., vector * "string")
         return NotImplemented
 
@@ -172,8 +173,9 @@ class R3Vector(R2Vector):
         # super() calls the parent class (R2Vector) to initialize x and y
         super().__init__(x=x, y=y)
         self.z = z
-        # A cross product is between two 3D vectors; and the result is another 3D vector.
 
+    
+    # A cross product is between two 3D vectors; and the result is another 3D vector.
     def cross(self, other):
         """Return the cross product of two R3 vectors."""
         if type(self) != type(other):
@@ -212,6 +214,7 @@ class R5Vector(R2Vector):
     Ignore if unfamiliar; this is for educational purposes.
     Typically, you'd use either __dict__ or __slots__, not both."""
     __slots__ = ('z', 'w', 'v')  # ← drop x, y
+    
     def __init__(self, *, x, y, z, w, v):
         super().__init__(x=x, y=y)  # x,y live in base __dict__
         self.z, self.w, self.v = z, w, v
@@ -242,6 +245,7 @@ class R5Vector(R2Vector):
         # But not R2Vector + R3Vector or R5Vector + int
         if type(self) != type(other):
             return NotImplemented
+            
         # With __slots__, the instance does not expose a __dict__,
         # so we loop directly over the defined slot names (x, y, z, w, v).
         component_names = self.__slots__
@@ -257,6 +261,7 @@ class R5Vector(R2Vector):
         """Vector subtraction of two vectors of the same type."""
         if type(self) != type(other):
             return NotImplemented
+            
         # Iterate over __slots__ so we can access every stored component.
         component_names = self.__slots__
         diff_values = {
@@ -300,6 +305,7 @@ class R5Vector(R2Vector):
             ]
             # return just the sum of the products
             return sum(args)
+            
         # If we get here, types are incompatible (e.g., vector * "string")
         return NotImplemented
 
@@ -373,6 +379,7 @@ class R6Vector(R2Vector):
         """Vector addition of two R6Vector instances."""
         if type(self) != type(other):
             return NotImplemented
+            
         # Combine the base-class attributes ('x', 'y') with this class's slots.
         # We do this because R6Vector inherits x and y from R2Vector,
         component_names = ('x', 'y') + self.__slots__
